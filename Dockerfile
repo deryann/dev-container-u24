@@ -1,6 +1,6 @@
-FROM python:3.11-slim
+FROM ubuntu:22.04
 
-# Install system dependencies and development tools in one layer
+# Install system dependencies, Python 3.11, and development tools in one layer
 RUN apt-get update && apt-get install -y \
     # Essential build tools
     curl \
@@ -12,6 +12,11 @@ RUN apt-get update && apt-get install -y \
     lsb-release \
     wget \
     unzip \
+    # Python and pip
+    python3.11 \
+    python3.11-dev \
+    python3.11-distutils \
+    python3-pip \
     # Development tools
     git \
     zsh \
@@ -24,7 +29,10 @@ RUN apt-get update && apt-get install -y \
     openssh-server \
     sudo \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    # Create symlinks for python and python3 to point to python3.11
+    && ln -sf /usr/bin/python3.11 /usr/bin/python3 \
+    && ln -sf /usr/bin/python3.11 /usr/bin/python
 
 
 
