@@ -1,0 +1,26 @@
+services:
+  python-dev:
+    build: .
+    container_name: ${CONTAINER_NAME}
+    ports:
+      - "${SSH_PORT:-2222}:22"  # SSH port mapping from .env
+    volumes:
+      - ${HOST_WORK_DIR}:/app
+      - ~/.ssh:/root/.ssh:ro  # Optional: mount SSH keys
+    environment:
+      - PYTHONPATH=/app
+      - PYTHONDONTWRITEBYTECODE=1
+      - PYTHONUNBUFFERED=1
+      - SHELL=/bin/zsh
+      - ZSH_THEME=powerlevel10k/powerlevel10k
+      - SSH_USER=${SSH_USER}
+      - SSH_PASSWORD=${SSH_PASSWORD}
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    networks:
+      - app-net
+
+networks:
+  app-net:
+    driver: bridge
