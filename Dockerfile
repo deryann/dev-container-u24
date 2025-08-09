@@ -158,7 +158,9 @@ function y() {
 EOF
 
 # Install Node.js using nvm
-RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/$(curl -s "https://api.github.com/repos/nvm-sh/nvm/releases/latest" | jq -r .tag_name)/install.sh | bash && \
+RUN NVM_VERSION=$(curl -s "https://api.github.com/repos/nvm-sh/nvm/releases/latest" | jq -r .tag_name | tr -d '\n') && \
+    echo "Installing NVM version: $NVM_VERSION" && \
+    curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh" | bash && \
     # Source nvm and install Node.js 22
     bash -c 'source /root/.nvm/nvm.sh && nvm install 22 && nvm use 22 && nvm alias default 22' && \
     # Add nvm to bashrc
