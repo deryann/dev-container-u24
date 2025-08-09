@@ -11,7 +11,7 @@ fi
 # Create SSH user if specified
 if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
     # Create user with home directory
-    useradd -m -s /bin/zsh "$SSH_USER"
+    useradd -m -s /bin/bash "$SSH_USER"
     
     # Set password
     echo "$SSH_USER:$SSH_PASSWORD" | chpasswd
@@ -19,22 +19,14 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
     # Add user to sudo group for root privileges
     usermod -aG sudo "$SSH_USER"
     
-    # Install Oh My Zsh for the SSH user
-    sudo -u "$SSH_USER" sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-    
-    # Install Powerlevel10k theme for SSH user
-    sudo -u "$SSH_USER" git clone --depth=1 https://github.com/romkatv/powerlevel10k.git "/home/$SSH_USER/.oh-my-zsh/custom/themes/powerlevel10k"
-    
-    # Install ZSH plugins for SSH user
-    sudo -u "$SSH_USER" git clone https://github.com/zsh-users/zsh-autosuggestions "/home/$SSH_USER/.oh-my-zsh/custom/plugins/zsh-autosuggestions"
-    sudo -u "$SSH_USER" git clone https://github.com/zsh-users/zsh-syntax-highlighting.git "/home/$SSH_USER/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting"
-    
-    # Copy ZSH configuration to user home
-    cp /root/.zshrc "/home/$SSH_USER/.zshrc"
-    cp /root/.p10k.zsh "/home/$SSH_USER/.p10k.zsh"
-    
-    # Fix ZSH configuration paths for the SSH user
-    sed -i "s|/root/.oh-my-zsh|/home/$SSH_USER/.oh-my-zsh|g" "/home/$SSH_USER/.zshrc"
+    # Configure bash environment for SSH user
+    echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> "/home/$SSH_USER/.bashrc"
+    echo 'alias ll="ls -alF"' >> "/home/$SSH_USER/.bashrc"
+    echo 'alias la="ls -A"' >> "/home/$SSH_USER/.bashrc"
+    echo 'alias l="ls -CF"' >> "/home/$SSH_USER/.bashrc"
+    echo 'alias cat="bat"' >> "/home/$SSH_USER/.bashrc"
+    echo 'alias grep="rg"' >> "/home/$SSH_USER/.bashrc"
+    echo 'alias top="btop"' >> "/home/$SSH_USER/.bashrc"
     
     # Create a symbolic link from user home to /app for convenience
     sudo -u "$SSH_USER" ln -sf /app "/home/$SSH_USER/app"
@@ -49,7 +41,7 @@ if [ -n "$SSH_USER" ] && [ -n "$SSH_PASSWORD" ]; then
     # Add user to root group for additional permissions
     usermod -aG root "$SSH_USER"
     
-    echo "✅ SSH user '$SSH_USER' created with sudo privileges and /app access"
+    echo "✅ SSH user '$SSH_USER' created with sudo privileges and /app access (using bash shell)"
 fi
 
 # Configure SSH daemon

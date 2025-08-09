@@ -11,8 +11,7 @@ services:
       - PYTHONPATH=/app
       - PYTHONDONTWRITEBYTECODE=1
       - PYTHONUNBUFFERED=1
-      - SHELL=/bin/zsh
-      - ZSH_THEME=powerlevel10k/powerlevel10k
+      - SHELL=/bin/bash
       - SSH_USER=${SSH_USER}
       - SSH_PASSWORD=${SSH_PASSWORD}
     stdin_open: true

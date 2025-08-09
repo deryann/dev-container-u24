@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Environment Overview
 
-This is a Python development container environment built on Docker with enhanced development tools, ZSH with Powerlevel10k, and SSH access capabilities. The environment is designed for Python development with modern tooling and enhanced terminal experience.
+This is a Python development container environment built on Docker with enhanced development tools and SSH access capabilities. The environment is designed for Python development with modern tooling and bash shell.
 
 ## Key Commands
 
@@ -14,7 +14,7 @@ This is a Python development container environment built on Docker with enhanced
 docker compose up -d --build
 
 # Enter the development container
-docker compose exec python-dev zsh
+docker compose exec python-dev bash
 
 # Health check the environment
 docker compose exec python-dev env-check
@@ -26,8 +26,6 @@ docker compose exec python-dev env-check
 cp .env.example .env
 # Edit .env to configure CONTAINER_NAME, HOST_WORK_DIR, SSH_PORT, SSH_USER, SSH_PASSWORD
 
-# Configure Powerlevel10k theme (interactive wizard)
-p10k configure
 ```
 
 ### SSH Access
@@ -56,8 +54,8 @@ health-check
 ## Architecture and Structure
 
 ### Container Architecture
-- **Base**: Python 3.11-slim with essential development tools
-- **Shell**: ZSH with Oh My Zsh, Powerlevel10k theme, and enhanced plugins
+- **Base**: Ubuntu 22.04 with Python 3.11 and essential development tools
+- **Shell**: Bash with enhanced aliases and environment
 - **Package Manager**: UV (aliased to pip/pip3 for familiar usage)
 - **Enhanced Tools**: ripgrep (rg), bat, btop, yq, jq with smart aliasing
 - **SSH Server**: Configurable SSH access with sudo privileges
@@ -67,8 +65,7 @@ health-check
 ├── Dockerfile              # Multi-stage Python development container
 ├── docker-compose.yml      # Service configuration with environment variables
 ├── config/
-│   ├── scripts/            # Utility scripts (env-check, ssh-setup, etc.)
-│   └── zsh/                # ZSH and Powerlevel10k configurations
+│   └── scripts/            # Utility scripts (env-check, ssh-setup, etc.)
 └── readme.md              # Comprehensive setup and usage documentation
 ```
 
@@ -87,24 +84,23 @@ Key environment variables configured in docker-compose.yml:
 - `PYTHONPATH=/app` (working directory mounted as volume)
 - `PYTHONDONTWRITEBYTECODE=1` (prevent .pyc files)
 - `PYTHONUNBUFFERED=1` (real-time output)
-- `SHELL=/bin/zsh` (enhanced shell experience)
+- `SHELL=/bin/bash` (bash shell experience)
 
 ### Utility Scripts
 Available system scripts (accessible from PATH):
 - `env-check` - Comprehensive environment health check
 - `ssh-setup` - Initialize SSH service (runs automatically)
 - `test-ssh` - Test SSH connection configuration
-- `fallback-shell` - Basic shell fallback if ZSH fails
+- `fallback-shell` - Basic shell fallback
 - `test-terminal` - Terminal output testing
 
 ## Development Workflow
 
 1. **Initial Setup**: Copy `.env.example` to `.env` and customize configuration
 2. **Container Startup**: Use `docker compose up -d --build` to start
-3. **Environment Entry**: Use `docker compose exec python-dev zsh` or SSH connection
-4. **First-time Configuration**: Run `p10k configure` to set up terminal theme
-5. **Development**: Work in `/app` directory (mapped to host filesystem)
-6. **Health Monitoring**: Use `env-check` to verify environment state
+3. **Environment Entry**: Use `docker compose exec python-dev bash` or SSH connection
+4. **Development**: Work in `/app` directory (mapped to host filesystem)
+5. **Health Monitoring**: Use `env-check` to verify environment state
 
 ## Network and Ports
 

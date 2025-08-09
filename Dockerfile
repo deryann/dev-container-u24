@@ -19,7 +19,6 @@ RUN apt-get update && apt-get install -y \
     python3-pip \
     # Development tools
     git \
-    zsh \
     vim \
     net-tools \
     jq \
@@ -90,30 +89,13 @@ RUN chmod +x /tmp/verify-tools.sh && \
 # Copy essential utility scripts
 COPY config/scripts/env-check.sh /usr/local/bin/env-check
 COPY config/scripts/fallback-shell.sh /usr/local/bin/fallback-shell
-COPY config/scripts/docker-zsh-setup.sh /usr/local/bin/docker-zsh-setup
 COPY config/scripts/test-terminal-output.sh /usr/local/bin/test-terminal
 COPY config/scripts/ssh-setup.sh /usr/local/bin/ssh-setup
 COPY config/scripts/test-ssh.sh /usr/local/bin/test-ssh
-RUN chmod +x /usr/local/bin/env-check /usr/local/bin/fallback-shell /usr/local/bin/docker-zsh-setup /usr/local/bin/test-terminal /usr/local/bin/ssh-setup /usr/local/bin/test-ssh
+RUN chmod +x /usr/local/bin/env-check /usr/local/bin/fallback-shell /usr/local/bin/test-terminal /usr/local/bin/ssh-setup /usr/local/bin/test-ssh
 
-# Set ZSH as default shell
-RUN chsh -s $(which zsh)
-ENV SHELL=/bin/zsh
-
-# Install Oh My Zsh (unattended mode)
-RUN sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
-
-# Install Powerlevel10k theme
-RUN git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
-
-# Install ZSH plugins in one layer
-RUN git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions && \
-    git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting && \
-    git clone https://github.com/agkozak/zsh-z ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-z
-
-# Copy ZSH configuration files
-COPY config/zsh/.zshrc /root/.zshrc
-COPY config/zsh/.p10k.zsh /root/.p10k.zsh
+# Set bash as default shell
+ENV SHELL=/bin/bash
 
 # Set basic environment variables
 ENV LANG=C.UTF-8
@@ -143,4 +125,4 @@ RUN echo '#!/bin/bash\nssh-setup\nexec "$@"' > /usr/local/bin/docker-entrypoint.
     chmod +x /usr/local/bin/docker-entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
-CMD ["zsh"]
+CMD ["bash"]

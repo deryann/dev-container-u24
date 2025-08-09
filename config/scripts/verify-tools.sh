@@ -11,8 +11,8 @@ python --version 2>&1 | grep -o "Python [0-9.]*"
 echo -n "Git: "
 git --version 2>&1 | grep -o "git version [0-9.]*"
 
-echo -n "ZSH: "
-zsh --version 2>&1 | grep -o "zsh [0-9.]*"
+echo -n "Bash: "
+bash --version 2>&1 | head -1 | grep -o "GNU bash, version [0-9.]*"
 
 echo -n "JQ: "
 jq --version 2>&1

@@ -29,21 +29,16 @@ else
     echo "X Unicode checkmark failed - using ASCII mode"
 fi
 
-# Test Powerlevel10k mode
-echo ""
-echo "⚡ Powerlevel10k settings:"
-echo "POWERLEVEL9K_MODE: ${POWERLEVEL9K_MODE:-not set}"
-echo "POWERLEVEL9K_DISABLE_GITSTATUS: ${POWERLEVEL9K_DISABLE_GITSTATUS:-not set}"
 
-# Test ZSH prompt
+# Test Bash prompt
 echo ""
-echo "🐚 ZSH prompt test:"
-if command -v zsh >/dev/null 2>&1; then
-    echo "ZSH available: $(zsh --version)"
-    # Test a simple ZSH command
-    zsh -c 'echo "ZSH prompt test: $PS1"' 2>/dev/null || echo "ZSH prompt test failed"
+echo "🐚 Bash prompt test:"
+if command -v bash >/dev/null 2>&1; then
+    echo "Bash available: $(bash --version | head -1)"
+    # Test a simple Bash command
+    bash -c 'echo "Bash prompt test: $PS1"' 2>/dev/null || echo "Bash prompt test failed"
 else
-    echo "ZSH not available"
+    echo "Bash not available"
 fi
 
 # Test Docker environment
