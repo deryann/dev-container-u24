@@ -111,7 +111,8 @@ COPY config/scripts/fallback-shell.sh /usr/local/bin/fallback-shell
 COPY config/scripts/test-terminal-output.sh /usr/local/bin/test-terminal
 COPY config/scripts/ssh-setup.sh /usr/local/bin/ssh-setup
 COPY config/scripts/test-ssh.sh /usr/local/bin/test-ssh
-RUN chmod +x /usr/local/bin/env-check /usr/local/bin/fallback-shell /usr/local/bin/test-terminal /usr/local/bin/ssh-setup /usr/local/bin/test-ssh
+COPY config/scripts/setup-user-env.sh /usr/local/bin/setup-user-env
+RUN chmod +x /usr/local/bin/env-check /usr/local/bin/fallback-shell /usr/local/bin/test-terminal /usr/local/bin/ssh-setup /usr/local/bin/test-ssh /usr/local/bin/setup-user-env
 
 # Set bash as default shell
 ENV SHELL=/bin/bash
@@ -125,27 +126,47 @@ RUN ln -sf /usr/share/zoneinfo/Asia/Taipei /etc/localtime && \
 ENV LANG=C.UTF-8
 ENV LC_ALL=C.UTF-8
 ENV TERM=xterm-256color
-ENV PATH="/root/.cargo/bin:$PATH"
+ENV PATH="/opt/rust/bin:/usr/local/bin:$PATH"
+ENV STARSHIP_CONFIG="/etc/starship/starship.toml"
 
-# Install Rust, UV, and Yazi in one layer
-RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y && \
-    curl -LsSf https://astral.sh/uv/install.sh | sh && \
-    echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> /root/.bashrc && \
-    # Install Yazi file manager
-    /root/.cargo/bin/cargo install --locked yazi-fm yazi-cli && \
-    # Install Catppuccin Frappe flavor for Yazi
-    mkdir -p /root/.config/yazi && \
-    /root/.cargo/bin/ya pkg add yazi-rs/flavors:catppuccin-frappe && \
-    echo -e '[flavor]\ndark = "catppuccin-frappe"' > /root/.config/yazi/theme.toml
+# Install Rust system-wide with retry mechanism
+RUN RUSTUP_HOME=/opt/rust CARGO_HOME=/opt/rust && \
+    export RUSTUP_HOME CARGO_HOME && \
+    mkdir -p /opt/rust && \
+    # Download rustup with retry
+    for i in {1..3}; do \
+        wget -O /tmp/rustup-init https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init && break || sleep 5; \
+    done && \
+    chmod +x /tmp/rustup-init && \
+    /tmp/rustup-init -y --no-modify-path --default-toolchain stable && \
+    rm /tmp/rustup-init && \
+    # Add Rust to system PATH
+    echo 'export PATH="/opt/rust/bin:$PATH"' >> /etc/bash.bashrc && \
+    export PATH="/opt/rust/bin:$PATH"
 
-# Setup user directories, shell functions, and symbolic links
-RUN mkdir -p /root/.local/bin && \
-    # Create bat symbolic link (using existing batcat from apt)
-    ln -sf /usr/bin/batcat /root/.local/bin/bat && \
-    # Add ~/.local/bin to PATH
-    echo 'export PATH="$HOME/.local/bin:$PATH"' >> /root/.bashrc && \
-    # Add Yazi y function to bashrc
-    cat <<'EOF' >> /root/.bashrc
+# Install UV (Python package manager) with retry
+RUN for i in {1..3}; do \
+        curl -LsSf https://astral.sh/uv/install.sh | UV_INSTALL_DIR=/usr/local/bin sh && break || sleep 5; \
+    done
+
+# Install Yazi file manager using pre-built binaries instead of compiling
+RUN YAZI_VERSION=$(curl -s "https://api.github.com/repos/sxyazi/yazi/releases/latest" | jq -r .tag_name) && \
+    wget -O /tmp/yazi.zip "https://github.com/sxyazi/yazi/releases/download/${YAZI_VERSION}/yazi-x86_64-unknown-linux-musl.zip" && \
+    unzip /tmp/yazi.zip -d /tmp && \
+    cp /tmp/yazi-x86_64-unknown-linux-musl/yazi /usr/local/bin/ && \
+    cp /tmp/yazi-x86_64-unknown-linux-musl/ya /usr/local/bin/ && \
+    chmod +x /usr/local/bin/yazi /usr/local/bin/ya && \
+    rm -rf /tmp/yazi.zip /tmp/yazi-x86_64-unknown-linux-musl && \
+    # Create system-wide Yazi config directory
+    mkdir -p /etc/yazi && \
+    echo -e '[flavor]\ndark = "catppuccin-frappe"' > /etc/yazi/theme.toml
+
+# Setup system-wide directories, shell functions, and symbolic links
+RUN mkdir -p /usr/local/bin && \
+    # Create bat symbolic link system-wide (using existing batcat from apt)
+    ln -sf /usr/bin/batcat /usr/local/bin/bat && \
+    # Add Yazi y function to system-wide bashrc
+    cat <<'EOF' >> /etc/bash.bashrc
 
 # Yazi function for directory navigation
 function y() {
@@ -157,16 +178,16 @@ function y() {
 }
 EOF
 
-# Install Node.js using nvm
-RUN NVM_VERSION=$(curl -s "https://api.github.com/repos/nvm-sh/nvm/releases/latest" | jq -r .tag_name | tr -d '\n') && \
-    echo "Installing NVM version: $NVM_VERSION" && \
-    curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh" | bash && \
-    # Source nvm and install Node.js 22
-    bash -c 'source /root/.nvm/nvm.sh && nvm install 22 && nvm use 22 && nvm alias default 22' && \
-    # Add nvm to bashrc
-    echo 'export NVM_DIR="$HOME/.nvm"' >> /root/.bashrc && \
-    echo '[ -s "$NVM_DIR/nvm.sh" ] && \. "$NVM_DIR/nvm.sh"' >> /root/.bashrc && \
-    echo '[ -s "$NVM_DIR/bash_completion" ] && \. "$NVM_DIR/bash_completion"' >> /root/.bashrc
+# Install Node.js system-wide using NodeSource repository (much faster)
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
+    apt-get install -y nodejs && \
+    # Create symlinks for system-wide access
+    mkdir -p /opt/node && \
+    ln -sf /usr/bin/node /opt/node/node && \
+    ln -sf /usr/bin/npm /opt/node/npm && \
+    ln -sf /usr/bin/npx /opt/node/npx && \
+    # Add Node.js to system PATH
+    echo 'export PATH="/usr/bin:$PATH"' >> /etc/bash.bashrc
 
 # Setup Bash environment variables and settings
 RUN cat <<'EOF' >> /root/.profile
@@ -191,21 +212,37 @@ RUN ssh-keygen -t rsa -b 4096 -f /root/.ssh/id_rsa -P "" && \
     touch /root/.ssh/authorized_keys && \
     chmod 700 /root/.ssh && \
     chmod 600 /root/.ssh/authorized_keys && \
-    # Create projects directory
-    mkdir -p /root/projects
+    # Create projects directory and make it accessible to all users
+    mkdir -p /opt/projects && \
+    chmod 755 /opt/projects && \
+    # Create root projects directory and link to system projects
+    mkdir -p /root/projects && \
+    ln -sf /opt/projects /root/system-projects
 
-# Install Starship prompt
+# Install Starship prompt system-wide
 RUN curl -sS https://starship.rs/install.sh | sh -s -- -y && \
-    # Create config directory and install Catppuccin Powerline preset
-    mkdir -p /root/.config && \
-    /usr/local/bin/starship preset catppuccin-powerline -o /root/.config/starship.toml && \
+    # Create system-wide config directory and install Catppuccin Powerline preset
+    mkdir -p /etc/starship && \
+    /usr/local/bin/starship preset catppuccin-powerline -o /etc/starship/starship.toml && \
     # Enable line break in the config
-    sed -i '/^\[line_break\]/,/^\[/ s/disabled = true/disabled = false/' /root/.config/starship.toml && \
-    # Add starship to bashrc
+    sed -i '/^\[line_break\]/,/^\[/ s/disabled = true/disabled = false/' /etc/starship/starship.toml && \
+    # Add starship to system-wide bashrc
+    echo 'export STARSHIP_CONFIG="/etc/starship/starship.toml"' >> /etc/bash.bashrc && \
+    echo 'eval "$(starship init bash)"' >> /etc/bash.bashrc && \
+    # Also create config for root
+    mkdir -p /root/.config && \
+    cp /etc/starship/starship.toml /root/.config/starship.toml && \
     echo 'eval "$(starship init bash)"' >> /root/.bashrc
 
-# Install fzf fuzzy finder
-RUN git clone --depth 1 https://github.com/junegunn/fzf.git /root/.fzf && \
+# Install fzf fuzzy finder system-wide
+RUN git clone --depth 1 https://github.com/junegunn/fzf.git /opt/fzf && \
+    /opt/fzf/install --all --no-update-rc && \
+    # Add fzf to system PATH and bashrc
+    ln -sf /opt/fzf/bin/fzf /usr/local/bin/fzf && \
+    echo 'source /opt/fzf/shell/completion.bash' >> /etc/bash.bashrc && \
+    echo 'source /opt/fzf/shell/key-bindings.bash' >> /etc/bash.bashrc && \
+    # Also install for root user
+    git clone --depth 1 https://github.com/junegunn/fzf.git /root/.fzf && \
     /root/.fzf/install --all
 
 # Setup Vim editor configuration
@@ -242,10 +279,36 @@ RUN AICHAT_VERSION=$(curl -s "https://api.github.com/repos/sigoden/aichat/releas
     tar -xzO aichat > /usr/local/bin/aichat && \
     chmod +x /usr/local/bin/aichat
 
-# Install Claude Code using npm (requires Node.js/nvm to be loaded)
-RUN bash -c 'source /root/.nvm/nvm.sh && npm install -g @anthropic-ai/claude-code'
+# Install Claude Code using npm system-wide
+RUN npm install -g @anthropic-ai/claude-code
 
-# Setup enhanced shell aliases for better command experience
+# Create system-wide environment file
+RUN cat <<EOF > /etc/environment
+PATH="/opt/rust/bin:/usr/bin:/usr/local/bin:/bin"
+STARSHIP_CONFIG="/etc/starship/starship.toml"
+LANG="C.UTF-8"
+LC_ALL="C.UTF-8"
+TERM="xterm-256color"
+EOF
+
+# Setup enhanced shell aliases for better command experience system-wide
+RUN cat <<'EOF' >> /etc/bash.bashrc
+
+# Enhanced command aliases (smart fallbacks to original commands if needed)
+alias cat='bat --style=auto --paging=never'
+alias grep='rg --color=auto'
+alias top='btop'
+alias pip='uv pip'
+alias pip3='uv pip'
+
+# Fallback aliases to access original commands if needed
+alias original_cat='/bin/cat'
+alias original_grep='/bin/grep'
+alias original_top='/usr/bin/top'
+alias original_pip='/usr/bin/pip3'
+EOF
+
+# Also add aliases to root user bashrc
 RUN cat <<'EOF' >> /root/.bashrc
 
 # Enhanced command aliases (smart fallbacks to original commands if needed)
