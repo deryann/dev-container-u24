@@ -63,7 +63,9 @@ BASHRC_EOF
     
     # Create symbolic links for convenience
     sudo -u "$SSH_USER" ln -sf /app "/home/$SSH_USER/app"
-    sudo -u "$SSH_USER" ln -sf /opt/projects "/home/$SSH_USER/projects"
+    # Create projects directory owned by SSH_USER instead of linking to /opt/projects
+    sudo -u "$SSH_USER" mkdir -p "/home/$SSH_USER/projects"
+    sudo chown "$SSH_USER:$SSH_USER" "/home/$SSH_USER/projects"
     
     # Create user config directories
     sudo -u "$SSH_USER" mkdir -p "/home/$SSH_USER/.config"
