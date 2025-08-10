@@ -14,6 +14,9 @@ services:
       - SHELL=/bin/bash
       - SSH_USER=${SSH_USER}
       - SSH_PASSWORD=${SSH_PASSWORD}
+      - GITHUB_NAME=${GITHUB_NAME}
+      - GITHUB_EMAIL=${GITHUB_EMAIL}
+      - GITHUB_TOKEN=${GITHUB_TOKEN}
     stdin_open: true
     tty: true
     restart: unless-stopped

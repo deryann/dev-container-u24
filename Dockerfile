@@ -112,7 +112,8 @@ COPY config/scripts/test-terminal-output.sh /usr/local/bin/test-terminal
 COPY config/scripts/ssh-setup.sh /usr/local/bin/ssh-setup
 COPY config/scripts/test-ssh.sh /usr/local/bin/test-ssh
 COPY config/scripts/setup-user-env.sh /usr/local/bin/setup-user-env
-RUN chmod +x /usr/local/bin/env-check /usr/local/bin/fallback-shell /usr/local/bin/test-terminal /usr/local/bin/ssh-setup /usr/local/bin/test-ssh /usr/local/bin/setup-user-env
+COPY config/scripts/setup-git-config.sh /usr/local/bin/setup-git-config
+RUN chmod +x /usr/local/bin/env-check /usr/local/bin/fallback-shell /usr/local/bin/test-terminal /usr/local/bin/ssh-setup /usr/local/bin/test-ssh /usr/local/bin/setup-user-env /usr/local/bin/setup-git-config
 
 # Set bash as default shell
 ENV SHELL=/bin/bash
@@ -338,7 +339,7 @@ WORKDIR /app
 RUN chmod 755 /app
 
 # Create startup script
-RUN echo '#!/bin/bash\nssh-setup\nexec "$@"' > /usr/local/bin/docker-entrypoint.sh && \
+RUN echo '#!/bin/bash\nssh-setup\nsetup-git-config\nexec "$@"' > /usr/local/bin/docker-entrypoint.sh && \
     chmod +x /usr/local/bin/docker-entrypoint.sh
 
 ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
