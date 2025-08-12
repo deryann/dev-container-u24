@@ -283,6 +283,12 @@ RUN AICHAT_VERSION=$(curl -s "https://api.github.com/repos/sigoden/aichat/releas
 # Install Claude Code using npm system-wide
 RUN npm install -g @anthropic-ai/claude-code
 
+# Configure Claude Code with MCP context7 and create cc alias
+RUN claude mcp add -s user context7 -- npx -y @upstash/context7-mcp@latest && \
+    # Create cc alias for claude with skip permissions flag
+    echo 'alias cc="claude --dangerously-skip-permissions"' >> /etc/bash.bashrc && \
+    echo 'alias cc="claude --dangerously-skip-permissions"' >> /root/.bashrc
+
 # Create system-wide environment file
 RUN cat <<EOF > /etc/environment
 PATH="/opt/rust/bin:/usr/bin:/usr/local/bin:/bin"
