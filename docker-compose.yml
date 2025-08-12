@@ -4,6 +4,7 @@ services:
     container_name: ${CONTAINER_NAME}
     ports:
       - "${SSH_PORT:-2222}:22"  # SSH port mapping from .env
+      - "${WEB_PORT:-8000}:8000"  # Web application port mapping from .env
     volumes:
       - ${HOST_WORK_DIR}:/app
       - ~/.ssh:/root/.ssh:ro  # Optional: mount SSH keys
