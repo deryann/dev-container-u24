@@ -37,6 +37,9 @@ setup_user_git_config() {
     sudo -u "$user_name" git config --global credential.helper store
     echo "✅ Git credential.helper set to store for $user_name"
 
+    sudo -u "$user_name" git config --global submodule.recurse true
+    echo "✅ Git submodule.recurse set to true for $user_name"
+
     # Add GITHUB_TOKEN to user's bashrc if provided
     if [ -n "$GITHUB_TOKEN" ]; then
         local bashrc_file="$user_home/.bashrc"

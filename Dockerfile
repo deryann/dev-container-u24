@@ -113,7 +113,8 @@ COPY config/scripts/ssh-setup.sh /usr/local/bin/ssh-setup
 COPY config/scripts/test-ssh.sh /usr/local/bin/test-ssh
 COPY config/scripts/setup-user-env.sh /usr/local/bin/setup-user-env
 COPY config/scripts/setup-git-config.sh /usr/local/bin/setup-git-config
-RUN chmod +x /usr/local/bin/env-check /usr/local/bin/fallback-shell /usr/local/bin/test-terminal /usr/local/bin/ssh-setup /usr/local/bin/test-ssh /usr/local/bin/setup-user-env /usr/local/bin/setup-git-config
+COPY config/scripts/test-git-config.sh /usr/local/bin/test-git-config
+RUN chmod +x /usr/local/bin/env-check /usr/local/bin/fallback-shell /usr/local/bin/test-terminal /usr/local/bin/ssh-setup /usr/local/bin/test-ssh /usr/local/bin/setup-user-env /usr/local/bin/setup-git-config /usr/local/bin/test-git-config
 
 # Set bash as default shell
 ENV SHELL=/bin/bash
