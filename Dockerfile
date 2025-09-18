@@ -48,56 +48,75 @@ RUN apt-get update && apt-get install -y \
 
 
 
-# Install special tools from GitHub releases in one optimized layer
-RUN ARCH=$(dpkg --print-architecture) && echo "Architecture: $ARCH" && \
-    # Get all versions at once
+# Install ripgrep
+RUN ARCH=$(dpkg --print-architecture) && echo "Installing ripgrep for $ARCH" && \
     RIPGREP_VERSION=$(curl -s https://api.github.com/repos/BurntSushi/ripgrep/releases/latest | jq -r .tag_name) && \
-    BAT_VERSION=$(curl -s https://api.github.com/repos/sharkdp/bat/releases/latest | jq -r .tag_name) && \
-    BTOP_VERSION=$(curl -s https://api.github.com/repos/aristocratos/btop/releases/latest | jq -r .tag_name) && \
-    YQ_VERSION=$(curl -s https://api.github.com/repos/mikefarah/yq/releases/latest | jq -r .tag_name) && \
-    # Install ripgrep
+    echo "Ripgrep version: $RIPGREP_VERSION" && \
     if [ "$ARCH" = "arm64" ]; then \
-    wget -O /tmp/ripgrep.tar.gz "https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep-${RIPGREP_VERSION#v}-aarch64-unknown-linux-gnu.tar.gz" && \
-    tar -xzf /tmp/ripgrep.tar.gz -C /tmp && \
-    cp /tmp/ripgrep-${RIPGREP_VERSION#v}-aarch64-unknown-linux-gnu/rg /usr/local/bin/ && \
-    chmod +x /usr/local/bin/rg && \
-    rm -rf /tmp/ripgrep.tar.gz /tmp/ripgrep-${RIPGREP_VERSION#v}-aarch64-unknown-linux-gnu; \
+        wget -O /tmp/ripgrep.tar.gz "https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep-${RIPGREP_VERSION#v}-aarch64-unknown-linux-gnu.tar.gz" && \
+        tar -xzf /tmp/ripgrep.tar.gz -C /tmp && \
+        cp /tmp/ripgrep-${RIPGREP_VERSION#v}-aarch64-unknown-linux-gnu/rg /usr/local/bin/ && \
+        rm -rf /tmp/ripgrep.tar.gz /tmp/ripgrep-${RIPGREP_VERSION#v}-aarch64-unknown-linux-gnu; \
     else \
-    wget -O /tmp/ripgrep.deb "https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep_${RIPGREP_VERSION#v}-1_amd64.deb" && \
-    dpkg -i /tmp/ripgrep.deb && \
-    rm /tmp/ripgrep.deb; \
+        wget -O /tmp/ripgrep.deb "https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep_${RIPGREP_VERSION#v}-1_amd64.deb" && \
+        dpkg -i /tmp/ripgrep.deb && \
+        rm /tmp/ripgrep.deb; \
     fi && \
-    # Install bat
+    chmod +x /usr/local/bin/rg && \
+    rg --version
+
+# Install bat
+RUN ARCH=$(dpkg --print-architecture) && echo "Installing bat for $ARCH" && \
+    BAT_VERSION=$(curl -s https://api.github.com/repos/sharkdp/bat/releases/latest | jq -r .tag_name) && \
+    echo "Bat version: $BAT_VERSION" && \
     if [ "$ARCH" = "arm64" ]; then \
-    wget -O /tmp/bat.deb "https://github.com/sharkdp/bat/releases/download/${BAT_VERSION}/bat_${BAT_VERSION#v}_arm64.deb"; \
+        wget -O /tmp/bat.deb "https://github.com/sharkdp/bat/releases/download/${BAT_VERSION}/bat_${BAT_VERSION#v}_arm64.deb"; \
     else \
-    wget -O /tmp/bat.deb "https://github.com/sharkdp/bat/releases/download/${BAT_VERSION}/bat_${BAT_VERSION#v}_amd64.deb"; \
+        wget -O /tmp/bat.deb "https://github.com/sharkdp/bat/releases/download/${BAT_VERSION}/bat_${BAT_VERSION#v}_amd64.deb"; \
     fi && \
     dpkg -i /tmp/bat.deb && \
     rm /tmp/bat.deb && \
-    # Install btop
+    bat --version
+
+# Install btop
+RUN ARCH=$(dpkg --print-architecture) && echo "Installing btop for $ARCH" && \
+    BTOP_VERSION=$(curl -s https://api.github.com/repos/aristocratos/btop/releases/latest | jq -r .tag_name) && \
+    echo "Btop version: $BTOP_VERSION" && \
     if [ "$ARCH" = "arm64" ]; then \
-    wget -O /tmp/btop.tbz "https://github.com/aristocratos/btop/releases/download/${BTOP_VERSION}/btop-aarch64-linux-musl.tbz"; \
+        wget -O /tmp/btop.tbz "https://github.com/aristocratos/btop/releases/download/${BTOP_VERSION}/btop-aarch64-linux-musl.tbz"; \
     else \
-    wget -O /tmp/btop.tbz "https://github.com/aristocratos/btop/releases/download/${BTOP_VERSION}/btop-x86_64-linux-musl.tbz"; \
+        wget -O /tmp/btop.tbz "https://github.com/aristocratos/btop/releases/download/${BTOP_VERSION}/btop-x86_64-linux-musl.tbz"; \
     fi && \
     tar -xjf /tmp/btop.tbz -C /tmp && \
     cp /tmp/btop/bin/btop /usr/local/bin/ && \
     chmod +x /usr/local/bin/btop && \
     rm -rf /tmp/btop.tbz /tmp/btop && \
-    # Install yq
+    btop --version
+
+# Install yq
+RUN ARCH=$(dpkg --print-architecture) && echo "Installing yq for $ARCH" && \
+    YQ_VERSION=$(curl -s https://api.github.com/repos/mikefarah/yq/releases/latest | jq -r .tag_name) && \
+    echo "YQ version: $YQ_VERSION" && \
     if [ "$ARCH" = "arm64" ]; then \
-    wget -O /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_arm64"; \
+        wget -O /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_arm64"; \
     else \
-    wget -O /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"; \
+        wget -O /usr/local/bin/yq "https://github.com/mikefarah/yq/releases/download/${YQ_VERSION}/yq_linux_amd64"; \
     fi && \
     chmod +x /usr/local/bin/yq && \
-    # Install DotSlash
+    yq --version
+
+# Install DotSlash
+RUN ARCH=$(dpkg --print-architecture) && echo "Installing DotSlash for $ARCH" && \
     if [ "$ARCH" = "arm64" ]; then \
-    curl -LSfs "https://github.com/facebook/dotslash/releases/latest/download/dotslash-ubuntu-24.04.aarch64.tar.gz" | tar -xzf - -C /usr/local/bin; \
+        wget -O /tmp/dotslash.tar.gz "https://github.com/facebook/dotslash/releases/latest/download/dotslash-ubuntu-24.04.aarch64.tar.gz" && \
+        tar -xzf /tmp/dotslash.tar.gz -C /usr/local/bin && \
+        rm /tmp/dotslash.tar.gz; \
     else \
-    curl -LSfs "https://github.com/facebook/dotslash/releases/latest/download/dotslash-ubuntu-24.04.x86_64.tar.gz" | tar -xzf - -C /usr/local/bin; \
-    fi
+        wget -O /tmp/dotslash.tar.gz "https://github.com/facebook/dotslash/releases/latest/download/dotslash-ubuntu-24.04.x86_64.tar.gz" && \
+        tar -xzf /tmp/dotslash.tar.gz -C /usr/local/bin && \
+        rm /tmp/dotslash.tar.gz; \
+    fi && \
+    chmod +x /usr/local/bin/dotslash || echo "DotSlash installation completed (chmod may not be needed)"
 
 # Copy and run tool verification script
 COPY config/scripts/verify-tools.sh /tmp/verify-tools.sh
