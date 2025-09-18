@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 
 # Install system dependencies, Python 3.11, and development tools in one layer
 RUN apt-get update && apt-get install -y \
@@ -16,9 +16,9 @@ RUN apt-get update && apt-get install -y \
     zip \
     zstd \
     # Python and pip
-    python3.11 \
-    python3.11-dev \
-    python3.11-distutils \
+    python3.12 \
+    python3.12-dev \
+    python3.12-venv \
     python3-pip \
     # Development tools
     git \
@@ -42,9 +42,9 @@ RUN apt-get update && apt-get install -y \
     sudo \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    # Create symlinks for python and python3 to point to python3.11
-    && ln -sf /usr/bin/python3.11 /usr/bin/python3 \
-    && ln -sf /usr/bin/python3.11 /usr/bin/python
+    # Create symlinks for python and python3 to point to python3.12
+    && ln -sf /usr/bin/python3.12 /usr/bin/python3 \
+    && ln -sf /usr/bin/python3.12 /usr/bin/python
 
 
 
@@ -94,9 +94,9 @@ RUN ARCH=$(dpkg --print-architecture) && echo "Architecture: $ARCH" && \
     chmod +x /usr/local/bin/yq && \
     # Install DotSlash
     if [ "$ARCH" = "arm64" ]; then \
-    curl -LSfs "https://github.com/facebook/dotslash/releases/latest/download/dotslash-ubuntu-22.04.aarch64.tar.gz" | tar fxz - -C /usr/local/bin; \
+    curl -LSfs "https://github.com/facebook/dotslash/releases/latest/download/dotslash-ubuntu-24.04.aarch64.tar.gz" | tar fxz - -C /usr/local/bin; \
     else \
-    curl -LSfs "https://github.com/facebook/dotslash/releases/latest/download/dotslash-ubuntu-22.04.x86_64.tar.gz" | tar fxz - -C /usr/local/bin; \
+    curl -LSfs "https://github.com/facebook/dotslash/releases/latest/download/dotslash-ubuntu-24.04.x86_64.tar.gz" | tar fxz - -C /usr/local/bin; \
     fi
 
 # Copy and run tool verification script
@@ -132,12 +132,17 @@ ENV PATH="/opt/rust/bin:/usr/local/bin:$PATH"
 ENV STARSHIP_CONFIG="/etc/starship/starship.toml"
 
 # Install Rust system-wide with retry mechanism
-RUN RUSTUP_HOME=/opt/rust CARGO_HOME=/opt/rust && \
+RUN ARCH=$(dpkg --print-architecture) && \
+    RUSTUP_HOME=/opt/rust CARGO_HOME=/opt/rust && \
     export RUSTUP_HOME CARGO_HOME && \
     mkdir -p /opt/rust && \
     # Download rustup with retry
     for i in {1..3}; do \
-        wget -O /tmp/rustup-init https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init && break || sleep 5; \
+        if [ "$ARCH" = "arm64" ]; then \
+            wget -O /tmp/rustup-init https://static.rust-lang.org/rustup/dist/aarch64-unknown-linux-gnu/rustup-init && break || sleep 5; \
+        else \
+            wget -O /tmp/rustup-init https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init && break || sleep 5; \
+        fi; \
     done && \
     chmod +x /tmp/rustup-init && \
     /tmp/rustup-init -y --no-modify-path --default-toolchain stable && \
@@ -152,13 +157,22 @@ RUN for i in {1..3}; do \
     done
 
 # Install Yazi file manager using pre-built binaries instead of compiling
-RUN YAZI_VERSION=$(curl -s "https://api.github.com/repos/sxyazi/yazi/releases/latest" | jq -r .tag_name) && \
-    wget -O /tmp/yazi.zip "https://github.com/sxyazi/yazi/releases/download/${YAZI_VERSION}/yazi-x86_64-unknown-linux-musl.zip" && \
-    unzip /tmp/yazi.zip -d /tmp && \
-    cp /tmp/yazi-x86_64-unknown-linux-musl/yazi /usr/local/bin/ && \
-    cp /tmp/yazi-x86_64-unknown-linux-musl/ya /usr/local/bin/ && \
+RUN ARCH=$(dpkg --print-architecture) && \
+    YAZI_VERSION=$(curl -s "https://api.github.com/repos/sxyazi/yazi/releases/latest" | jq -r .tag_name) && \
+    if [ "$ARCH" = "arm64" ]; then \
+        wget -O /tmp/yazi.zip "https://github.com/sxyazi/yazi/releases/download/${YAZI_VERSION}/yazi-aarch64-unknown-linux-musl.zip" && \
+        unzip /tmp/yazi.zip -d /tmp && \
+        cp /tmp/yazi-aarch64-unknown-linux-musl/yazi /usr/local/bin/ && \
+        cp /tmp/yazi-aarch64-unknown-linux-musl/ya /usr/local/bin/ && \
+        rm -rf /tmp/yazi.zip /tmp/yazi-aarch64-unknown-linux-musl; \
+    else \
+        wget -O /tmp/yazi.zip "https://github.com/sxyazi/yazi/releases/download/${YAZI_VERSION}/yazi-x86_64-unknown-linux-musl.zip" && \
+        unzip /tmp/yazi.zip -d /tmp && \
+        cp /tmp/yazi-x86_64-unknown-linux-musl/yazi /usr/local/bin/ && \
+        cp /tmp/yazi-x86_64-unknown-linux-musl/ya /usr/local/bin/ && \
+        rm -rf /tmp/yazi.zip /tmp/yazi-x86_64-unknown-linux-musl; \
+    fi && \
     chmod +x /usr/local/bin/yazi /usr/local/bin/ya && \
-    rm -rf /tmp/yazi.zip /tmp/yazi-x86_64-unknown-linux-musl && \
     # Create system-wide Yazi config directory
     mkdir -p /etc/yazi && \
     echo -e '[flavor]\ndark = "catppuccin-frappe"' > /etc/yazi/theme.toml
@@ -276,9 +290,15 @@ RUN type -p wget >/dev/null || (apt-get update && apt-get install wget -y) && \
     rm -rf /var/lib/apt/lists/*
 
 # Install AIChat LLM CLI tool
-RUN AICHAT_VERSION=$(curl -s "https://api.github.com/repos/sigoden/aichat/releases/latest" | jq -r .tag_name) && \
-    curl -sL "https://github.com/sigoden/aichat/releases/download/${AICHAT_VERSION}/aichat-${AICHAT_VERSION}-x86_64-unknown-linux-musl.tar.gz" | \
-    tar -xzO aichat > /usr/local/bin/aichat && \
+RUN ARCH=$(dpkg --print-architecture) && \
+    AICHAT_VERSION=$(curl -s "https://api.github.com/repos/sigoden/aichat/releases/latest" | jq -r .tag_name) && \
+    if [ "$ARCH" = "arm64" ]; then \
+        curl -sL "https://github.com/sigoden/aichat/releases/download/${AICHAT_VERSION}/aichat-${AICHAT_VERSION}-aarch64-unknown-linux-musl.tar.gz" | \
+        tar -xzO aichat > /usr/local/bin/aichat; \
+    else \
+        curl -sL "https://github.com/sigoden/aichat/releases/download/${AICHAT_VERSION}/aichat-${AICHAT_VERSION}-x86_64-unknown-linux-musl.tar.gz" | \
+        tar -xzO aichat > /usr/local/bin/aichat; \
+    fi && \
     chmod +x /usr/local/bin/aichat
 
 # Install Claude Code using npm system-wide

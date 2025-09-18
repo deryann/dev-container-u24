@@ -68,7 +68,7 @@ echo "OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d'"' -f2)"
 echo "Shell: $SHELL"
 
 echo -e "\n${BLUE}2. Python Environment${NC}"
-check_command "python" "Python 3\.11" "Python 3.11"
+check_command "python" "Python 3\.12" "Python 3.12"
 check_env_var "VIRTUAL_ENV" "Virtual Environment"
 check_env_var "PYTHONPATH" "Python Path"
 
