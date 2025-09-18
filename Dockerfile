@@ -94,9 +94,9 @@ RUN ARCH=$(dpkg --print-architecture) && echo "Architecture: $ARCH" && \
     chmod +x /usr/local/bin/yq && \
     # Install DotSlash
     if [ "$ARCH" = "arm64" ]; then \
-    curl -LSfs "https://github.com/facebook/dotslash/releases/latest/download/dotslash-ubuntu-24.04.aarch64.tar.gz" | tar fxz - -C /usr/local/bin; \
+    curl -LSfs "https://github.com/facebook/dotslash/releases/latest/download/dotslash-ubuntu-24.04.aarch64.tar.gz" | tar -xzf - -C /usr/local/bin; \
     else \
-    curl -LSfs "https://github.com/facebook/dotslash/releases/latest/download/dotslash-ubuntu-24.04.x86_64.tar.gz" | tar fxz - -C /usr/local/bin; \
+    curl -LSfs "https://github.com/facebook/dotslash/releases/latest/download/dotslash-ubuntu-24.04.x86_64.tar.gz" | tar -xzf - -C /usr/local/bin; \
     fi
 
 # Copy and run tool verification script
